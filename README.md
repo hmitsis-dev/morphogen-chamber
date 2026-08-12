@@ -2,8 +2,10 @@
 
 A public page that shows a living, ever-changing abstract visual with no
 explanation and no purpose — that is secretly being painted, live, by
-ordinary-looking network pings flowing between two servers, forever, for
-no reason other than that it's possible.
+ordinary-looking network pings flowing between two services, forever,
+for no reason other than that it's possible. Runs fine as two
+containers on one machine, or split across two separate ones if you
+want the ping to actually cross the internet.
 
 ## How it works
 
@@ -49,29 +51,42 @@ drive generative art instead of a filesystem.
 Both services need the `NET_RAW` capability to open raw sockets — see
 `docker-compose.yml`.
 
-## Local development
+## Quick start (single machine)
+
+Everything runs happily on one box — one Docker network, both
+containers, no extra configuration:
 
 ```sh
 docker compose build
 docker compose up
 ```
 
-Open `http://localhost:8080`. Both services run in one Compose project
-and talk to each other over the internal Docker network.
+Open `http://localhost:8080`. The `sender` and `receiver` containers
+find each other over Docker's internal DNS (`sender` and `receiver`
+are the default hostnames baked into `docker-compose.yml`) and start
+pinging each other immediately.
 
-You can also run either service directly on the host (useful for
-quick iteration, since raw ICMP sockets need root or `CAP_NET_RAW`):
+For a public deployment on a single VM, just run the same commands
+there, open inbound TCP/8080 (or put a reverse proxy such as
+Caddy/nginx in front for TLS on 443 — recommended for a public URL),
+and you're done. No second machine required.
+
+You can also run either service directly on the host without Docker
+(useful for quick iteration, since raw ICMP sockets need root or
+`CAP_NET_RAW`):
 
 ```sh
 sudo PEER_ADDR=127.0.0.1 PORT=8091 python3 receiver/main.py
 sudo PEER_ADDR=127.0.0.1 python3 sender/main.py
 ```
 
-## Deploying across two real servers
+## Optional: splitting across two machines
 
-This is designed for exactly two small boxes (built against 2 vCPU /
-12 GB RAM Oracle Cloud instances, but any two reachable Linux hosts
-work).
+The whole point of the trick still works with one box, but it's a bit
+more fun for real if the "ping" is actually crossing the open internet
+between two separate servers instead of staying inside one Docker
+network. If you have two reachable Linux hosts, you can split the
+two services between them:
 
 1. **Clone this repo on both servers.**
 
@@ -83,10 +98,10 @@ work).
    ```
 
    Open inbound TCP/8080 (or put a reverse proxy like Caddy/nginx in
-   front for TLS on 443 — recommended for the public URL) and inbound
-   ICMP echo from Server A's IP, in both the Oracle Cloud security
-   list/NSG **and** the host firewall (`firewalld`/`ufw`/`iptables`) —
-   Oracle images typically block ICMP by default in both places.
+   front for TLS on 443) and inbound ICMP echo from Server A's IP, in
+   both your cloud provider's firewall/security-group settings **and**
+   the host firewall (`firewalld`/`ufw`/`iptables`) — most cloud
+   provider images block ICMP by default in both places.
 
 3. **Server A (backend) — runs `sender`:**
 
@@ -95,8 +110,8 @@ work).
    RECEIVER_ADDR=<Server B's IP> docker compose up -d --build sender
    ```
 
-   Needs outbound ICMP allowed to Server B — check the security
-   list/NSG and host firewall here too.
+   Needs outbound ICMP allowed to Server B — check the firewall/
+   security-group settings and host firewall here too.
 
 4. **Verify:** `docker compose logs -f` on either box should show the
    services running; the receiver logs which peer it's accepting
@@ -106,5 +121,5 @@ work).
 By default the receiver only renders pulses whose source IP matches
 `PEER_ADDR` (Server A). Leave that unset if you'd rather accept
 correctly-formed pulses from anyone who reverse engineers the format —
-not recommended for the always-on public deployment, but a fun option
+not recommended for an always-on public deployment, but a fun option
 for a private demo.
