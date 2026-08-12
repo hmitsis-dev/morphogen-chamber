@@ -7,6 +7,9 @@
   const panel = document.getElementById("panel");
   const revealBtn = document.getElementById("reveal");
   const log = document.getElementById("log");
+  const statRateEl = document.getElementById("stat-rate");
+  const statTotalEl = document.getElementById("stat-total");
+  const statLastEl = document.getElementById("stat-last");
 
   revealBtn.addEventListener("click", () => panel.classList.toggle("open"));
 
@@ -47,6 +50,23 @@
     log.appendChild(line);
     while (log.childElementCount > 60) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
+
+    recordPacketStat(msg.ts);
+  }
+
+  // ---- live packet-rate stats, shown in the reveal panel -----------------
+  let totalPackets = 0;
+  let recentTimestamps = [];
+
+  function recordPacketStat(ts) {
+    totalPackets++;
+    recentTimestamps.push(ts);
+    const cutoff = ts - 1000;
+    while (recentTimestamps.length && recentTimestamps[0] < cutoff) recentTimestamps.shift();
+
+    statTotalEl.textContent = totalPackets.toLocaleString();
+    statRateEl.textContent = String(recentTimestamps.length);
+    statLastEl.textContent = new Date(ts).toLocaleTimeString();
   }
 
   // ---- canvas sizing -----------------------------------------------------

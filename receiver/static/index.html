@@ -14,10 +14,55 @@
 
 <aside id="panel">
   <div id="panel-inner">
-    <p>this is being drawn, live, by real ICMP echo packets &mdash; ordinary-looking pings &mdash;
-    flowing between two servers right now. each packet secretly carries a little payload
-    hidden in its data section. nothing here is fake or pre-rendered.</p>
-    <div id="log"></div>
+
+    <section class="panel-block">
+      <h2>what this is</h2>
+      <p>this is being drawn, live, by real ICMP echo packets &mdash; ordinary-looking
+      pings &mdash; flowing between two servers right now. nothing here is fake or
+      pre-rendered.</p>
+    </section>
+
+    <section class="panel-block">
+      <h2>how</h2>
+      <p>one service sends a normal-looking ping roughly a dozen times a second.
+      hidden in the data section, after the ping header, is a small binary frame:
+      two magic bytes, a sequence number, a timestamp, and four numbers. the other
+      service sniffs every echo request that reaches it, checks for the magic
+      bytes, decodes the frame, and pushes it to this page over a websocket.</p>
+      <ul class="fields">
+        <li><span>hue</span>which color the particles and grid drift toward</li>
+        <li><span>energy</span>particle brightness, size, and spawn rate</li>
+        <li><span>speed</span>how fast the flow field and grid move</li>
+        <li><span>burst</span>triggers the expanding ring you'll see occasionally</li>
+      </ul>
+    </section>
+
+    <section class="panel-block">
+      <h2>right now</h2>
+      <dl class="stats">
+        <div><dt>packets/sec</dt><dd id="stat-rate">&mdash;</dd></div>
+        <div><dt>total seen</dt><dd id="stat-total">0</dd></div>
+        <div><dt>last packet</dt><dd id="stat-last">&mdash;</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel-block">
+      <h2>is any of this secure?</h2>
+      <p>there's nothing sensitive to protect here &mdash; the payload is just the
+      four numbers above, nothing personal or secret. but to be honest about the
+      mechanism: ICMP has no built-in authentication. the receiver only accepts
+      packets whose source IP matches the sender it's configured for, but source
+      IPs can be spoofed on networks that don't filter outbound traffic, so in
+      principle someone could forge packets and inject their own values into this
+      page. it doesn't matter here &mdash; there's nothing to steal and nothing
+      that actually breaks &mdash; but it's a disguise, not a security boundary.</p>
+    </section>
+
+    <section class="panel-block">
+      <h2>raw packets</h2>
+      <div id="log"></div>
+    </section>
+
   </div>
 </aside>
 
