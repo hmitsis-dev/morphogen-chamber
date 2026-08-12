@@ -1,0 +1,4 @@
+/sender/sender
+/receiver/receiver
+*.exe
+.DS_Store
