@@ -1,0 +1,28 @@
+# Local/single-box setup: both services on one bridge network, talking to
+# each other by container name. For the real two-server deployment, see
+# README.md - each server runs only its own service, pointed at the
+# other server's public/private IP via PEER_ADDR.
+services:
+  receiver:
+    build:
+      context: .
+      dockerfile: receiver/Dockerfile
+    cap_add:
+      - NET_RAW
+    environment:
+      PORT: "8080"
+      PEER_ADDR: ${SENDER_ADDR:-sender}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  sender:
+    build:
+      context: .
+      dockerfile: sender/Dockerfile
+    cap_add:
+      - NET_RAW
+    environment:
+      PEER_ADDR: ${RECEIVER_ADDR:-receiver}
+      SEND_INTERVAL_MS: "80"
+    restart: unless-stopped
