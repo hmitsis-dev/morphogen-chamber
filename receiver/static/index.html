@@ -10,6 +10,8 @@
 <canvas id="scene"></canvas>
 <div id="scanlines"></div>
 
+<div id="viewers-badge" class="corner-badge"></div>
+
 <button id="reveal" aria-label="?">?</button>
 
 <aside id="panel">
@@ -38,11 +40,25 @@
     </section>
 
     <section class="panel-block">
+      <h2>click anywhere</h2>
+      <p>clicking or tapping the page does two things. right away, a faint
+      ring appears at your cursor &mdash; that part is fake, purely drawn
+      client-side so it feels responsive. at the same time, this page asks
+      the receiver to ping the sender for real, requesting an extra burst.
+      a moment later a brighter ring blooms from the center &mdash; that
+      one is real, having actually crossed the network and come back. the
+      gap between the two rings is the round-trip time, made visible.</p>
+    </section>
+
+    <section class="panel-block">
       <h2>right now</h2>
       <dl class="stats">
         <div><dt>packets/sec</dt><dd id="stat-rate">&mdash;</dd></div>
         <div><dt>total seen</dt><dd id="stat-total">0</dd></div>
         <div><dt>last packet</dt><dd id="stat-last">&mdash;</dd></div>
+        <div><dt>watching now</dt><dd id="stat-viewers">&mdash;</dd></div>
+        <div><dt>receiver uptime</dt><dd id="stat-uptime">&mdash;</dd></div>
+        <div><dt>host load (1m)</dt><dd id="stat-load">&mdash;</dd></div>
       </dl>
     </section>
 
@@ -55,7 +71,9 @@
       IPs can be spoofed on networks that don't filter outbound traffic, so in
       principle someone could forge packets and inject their own values into this
       page. it doesn't matter here &mdash; there's nothing to steal and nothing
-      that actually breaks &mdash; but it's a disguise, not a security boundary.</p>
+      that actually breaks &mdash; but it's a disguise, not a security boundary.
+      the one real piece of user input, the click-to-nudge endpoint, is rate
+      limited per visitor and overall so it can't be turned into a flood.</p>
     </section>
 
     <section class="panel-block">

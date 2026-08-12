@@ -14,7 +14,6 @@ import binascii
 import json
 import os
 import socket
-import struct
 import sys
 import threading
 import time
@@ -24,21 +23,22 @@ import pulse  # noqa: E402
 
 from aiohttp import web, WSMsgType  # noqa: E402
 
+START_TIME = time.monotonic()
+
 clients: set[web.WebSocketResponse] = set()
 clients_lock = threading.Lock()
 
+total_packets_seen = 0
+total_packets_lock = threading.Lock()
 
-def parse_ip_and_icmp(packet: bytes):
-    """Raw ICMP sockets on Linux hand back the IP header too; strip it."""
-    if len(packet) < 20:
-        return None
-    ihl = (packet[0] & 0x0F) * 4
-    icmp_part = packet[ihl:]
-    if len(icmp_part) < 8:
-        return None
-    icmp_type, code, _chksum, pkt_id, pkt_seq = struct.unpack_from("!BBHHH", icmp_part, 0)
-    payload = icmp_part[8:]
-    return icmp_type, code, pkt_id, pkt_seq, payload
+# Per-source-IP cooldown plus a small global cap, so the one endpoint that
+# triggers outbound raw sockets from user input can't be turned into a
+# packet-flooding amplifier.
+NUDGE_COOLDOWN_S = 0.25
+NUDGE_GLOBAL_MAX_PER_SEC = 15
+_last_nudge_by_ip: dict[str, float] = {}
+_nudge_lock = threading.Lock()
+_recent_nudge_times: list[float] = []
 
 
 async def broadcast(event: dict) -> None:
@@ -56,6 +56,7 @@ async def broadcast(event: dict) -> None:
 
 
 def icmp_listener(loop: asyncio.AbstractEventLoop, peer_ip: str | None) -> None:
+    global total_packets_seen
     sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
 
     while True:
@@ -69,12 +70,15 @@ def icmp_listener(loop: asyncio.AbstractEventLoop, peer_ip: str | None) -> None:
         if peer_ip is not None and src_ip != peer_ip:
             continue
 
-        parsed = parse_ip_and_icmp(packet)
+        parsed = pulse.parse_ip_and_icmp(packet)
         if parsed is None:
             continue
         icmp_type, _code, _pkt_id, _pkt_seq, payload = parsed
         if icmp_type != 8:  # echo request only
             continue
+
+        with total_packets_lock:
+            total_packets_seen += 1
 
         now_ms = int(time.time() * 1000)
 
@@ -122,6 +126,69 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
     return ws
 
 
+async def nudge_handler(request: web.Request) -> web.Response:
+    """A visitor clicked the page. Ping the sender for real, asking it to
+    inflate its next burst - the one place this whole project accepts
+    outside input, so it's rate-limited per source and globally."""
+    peer_ip = request.app.get("peer_ip")
+    if not peer_ip:
+        return web.json_response({"ok": False, "error": "no peer configured"}, status=503)
+
+    remote = request.remote or "unknown"
+    now = time.monotonic()
+
+    with _nudge_lock:
+        if now - _last_nudge_by_ip.get(remote, 0.0) < NUDGE_COOLDOWN_S:
+            return web.json_response({"ok": False, "error": "too soon"}, status=429)
+
+        cutoff = now - 1.0
+        while _recent_nudge_times and _recent_nudge_times[0] < cutoff:
+            _recent_nudge_times.pop(0)
+        if len(_recent_nudge_times) >= NUDGE_GLOBAL_MAX_PER_SEC:
+            return web.json_response({"ok": False, "error": "busy"}, status=429)
+
+        _last_nudge_by_ip[remote] = now
+        _recent_nudge_times.append(now)
+
+    sock: socket.socket = request.app["nudge_sock"]
+    icmp_id = request.app["nudge_icmp_id"]
+    seq = int(time.monotonic() * 1000) & 0xFFFF
+
+    packet = pulse.build_echo_request(icmp_id, seq, pulse.encode_nudge(0.85))
+    try:
+        sock.sendto(packet, (peer_ip, 0))
+    except OSError as exc:
+        return web.json_response({"ok": False, "error": str(exc)}, status=500)
+
+    return web.json_response({"ok": True})
+
+
+async def meta_broadcaster() -> None:
+    """Every couple seconds, tell connected pages how many others are
+    watching and what the machine is doing - separate from the pulse
+    stream since it's about the audience/host, not the wire trick."""
+    while True:
+        await asyncio.sleep(2)
+
+        with clients_lock:
+            viewers = len(clients)
+        with total_packets_lock:
+            packets_total = total_packets_seen
+        try:
+            load1 = os.getloadavg()[0]
+        except (OSError, AttributeError):
+            load1 = None
+
+        await broadcast({
+            "kind": "meta",
+            "viewers": viewers,
+            "packetsTotal": packets_total,
+            "uptimeS": int(time.monotonic() - START_TIME),
+            "load1": load1,
+            "ts": int(time.time() * 1000),
+        })
+
+
 async def on_startup(app: web.Application) -> None:
     loop = asyncio.get_event_loop()
 
@@ -130,9 +197,15 @@ async def on_startup(app: web.Application) -> None:
     if peer_addr:
         peer_ip = socket.gethostbyname(peer_addr)
         print(f"receiver: only accepting pulses from {peer_addr} ({peer_ip})", flush=True)
+    app["peer_ip"] = peer_ip
+
+    app["nudge_sock"] = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+    app["nudge_icmp_id"] = os.getpid() & 0xFFFF
 
     t = threading.Thread(target=icmp_listener, args=(loop, peer_ip), daemon=True)
     t.start()
+
+    app["meta_task"] = asyncio.create_task(meta_broadcaster())
 
 
 def main() -> None:
@@ -141,6 +214,7 @@ def main() -> None:
 
     app = web.Application()
     app.router.add_get("/ws", ws_handler)
+    app.router.add_post("/nudge", nudge_handler)
     app.router.add_static("/", path=static_dir, show_index=True)
     app.on_startup.append(on_startup)
 

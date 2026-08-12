@@ -10,14 +10,35 @@
   const statRateEl = document.getElementById("stat-rate");
   const statTotalEl = document.getElementById("stat-total");
   const statLastEl = document.getElementById("stat-last");
+  const viewersBadge = document.getElementById("viewers-badge");
+  const statViewersEl = document.getElementById("stat-viewers");
+  const statUptimeEl = document.getElementById("stat-uptime");
+  const statLoadEl = document.getElementById("stat-load");
 
   revealBtn.addEventListener("click", () => panel.classList.toggle("open"));
 
   // ---- live state, smoothed toward whatever the wire tells us ----------
-  const state = { hue: 0.55, energy: 0.5, speed: 0.4, burst: 0 };
+  const state = { hue: 0.55, energy: 0.5, speed: 0.4 };
   const target = { ...state };
 
   function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // ---- viewers / machine stats, from periodic "meta" broadcasts --------
+  function applyMeta(msg) {
+    viewersBadge.textContent = msg.viewers === 1 ? "1 other here" : `${msg.viewers} others here`;
+    statViewersEl.textContent = String(msg.viewers);
+    statUptimeEl.textContent = formatUptime(msg.uptimeS);
+    statLoadEl.textContent = msg.load1 == null ? "n/a" : msg.load1.toFixed(2);
+  }
+
+  function formatUptime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
 
   // ---- websocket, reconnects forever ------------------------------------
   function connect() {
@@ -32,9 +53,11 @@
         target.hue = msg.hue;
         target.energy = msg.energy;
         target.speed = msg.speed;
-        if (msg.burst > target.burst) target.burst = msg.burst;
+        if (msg.burst > 0.05) spawnRing(W / 2, H * 0.42, "wire");
       } else if (msg.kind === "packet") {
         logPacket(msg);
+      } else if (msg.kind === "meta") {
+        applyMeta(msg);
       }
     };
 
@@ -109,8 +132,33 @@
     };
   }
 
+  // ---- interaction: click/tap anywhere to nudge the sender for real -----
+  // Two rings appear per click: a faint one right away at the click point
+  // (pure local feedback, no network involved), and - a beat later - a
+  // brighter one from the center once the sender's inflated burst actually
+  // makes its way back through the real ICMP round trip. The gap between
+  // them is the point: one is instant because it's fake, one is delayed
+  // because it's real.
+  let lastNudgeAt = 0;
+  const NUDGE_CLIENT_COOLDOWN_MS = 280;
+
+  function nudge(x, y) {
+    const now = performance.now();
+    if (now - lastNudgeAt < NUDGE_CLIENT_COOLDOWN_MS) return;
+    lastNudgeAt = now;
+
+    spawnRing(x, y, "local");
+    fetch("/nudge", { method: "POST" }).catch(() => {});
+  }
+
+  canvas.addEventListener("pointerdown", (e) => nudge(e.clientX, e.clientY));
+
   let t0 = performance.now();
-  let burstRing = 0; // 0..1 progress of an expanding ring, driven by bursts
+  const rings = []; // { x, y, progress, kind: "wire" | "local" }
+
+  function spawnRing(x, y, kind) {
+    rings.push({ x, y, progress: 0, kind });
+  }
 
   function frame(now) {
     const t = (now - t0) / 1000;
@@ -118,18 +166,13 @@
     state.hue = lerp(state.hue, target.hue, smooth);
     state.energy = lerp(state.energy, target.energy, smooth);
     state.speed = lerp(state.speed, target.speed, smooth);
-    state.burst = lerp(state.burst, 0, 0.06); // decays on its own
-    if (target.burst > 0.05) {
-      burstRing = Math.max(burstRing, 0.001);
-      target.burst = 0;
-    }
 
     ctx.fillStyle = "rgba(5, 4, 10, 0.16)"; // trailing fade, not a hard clear
     ctx.fillRect(0, 0, W, H);
 
     drawHorizonGrid(t);
     drawParticles(t);
-    drawBurstRing();
+    drawRings();
 
     requestAnimationFrame(frame);
   }
@@ -195,22 +238,26 @@
     ctx.restore();
   }
 
-  function drawBurstRing() {
-    if (burstRing <= 0) return;
-    burstRing += 0.018;
-    const cx = W / 2, cy = H * 0.42;
-    const radius = burstRing * Math.max(W, H) * 0.7;
-    const alpha = Math.max(0, 0.5 * (1 - burstRing));
+  function drawRings() {
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const r = rings[i];
+      r.progress += r.kind === "local" ? 0.03 : 0.018;
 
-    ctx.save();
-    ctx.strokeStyle = paletteColor(state.hue, alpha);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+      const maxRadius = Math.max(W, H) * (r.kind === "local" ? 0.35 : 0.7);
+      const radius = r.progress * maxRadius;
+      const baseAlpha = r.kind === "local" ? 0.35 : 0.5;
+      const alpha = Math.max(0, baseAlpha * (1 - r.progress));
 
-    if (burstRing >= 1) burstRing = 0;
+      ctx.save();
+      ctx.strokeStyle = paletteColor(state.hue, alpha);
+      ctx.lineWidth = r.kind === "local" ? 1 : 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      if (r.progress >= 1) rings.splice(i, 1);
+    }
   }
 
   requestAnimationFrame(frame);
