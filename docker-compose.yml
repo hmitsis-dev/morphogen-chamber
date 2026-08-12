@@ -1,0 +1,14 @@
+# Single-box by default: one service, no cross-machine setup needed.
+# Set MOCK_PRICES=1 (see .env or export before `docker compose up`) to run
+# without a live network - useful for local dev/offline demos.
+services:
+  capital:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      PORT: "8080"
+      MOCK_PRICES: ${MOCK_PRICES:-0}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

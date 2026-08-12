@@ -1,0 +1,278 @@
+:root {
+  --bg: #08060a;
+  --panel-bg: #0d0a0f;
+  --amber: #ffb000;
+  --amber-dim: rgba(255, 176, 0, 0.55);
+  --green: #39d98a;
+  --red: #ff4d4d;
+  --border: rgba(255, 176, 0, 0.22);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--amber);
+  font: 13px/1.5 var(--mono);
+}
+
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.035) 0px,
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.6) 100%);
+  mix-blend-mode: overlay;
+}
+
+/* ---- ticker tape --------------------------------------------------- */
+#ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  background: #0b090d;
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+.ticker-track {
+  display: inline-flex;
+  gap: 48px;
+  padding-left: 24px;
+  animation: ticker-scroll 26s linear infinite;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+.ticker-track .item { white-space: nowrap; }
+.ticker-track .up { color: var(--green); }
+.ticker-track .down { color: var(--red); }
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ---- layout ---------------------------------------------------------*/
+#terminal {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-areas:
+    "signal participants"
+    "backtest backtest";
+  gap: 14px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+@media (max-width: 760px) {
+  #terminal {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "signal"
+      "participants"
+      "backtest";
+  }
+}
+#signal-panel { grid-area: signal; }
+#participants-panel { grid-area: participants; }
+#backtest-panel { grid-area: backtest; }
+
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 3px;
+  padding: 16px;
+}
+
+/* ---- signal panel ----------------------------------------------------*/
+.brand-row { margin-bottom: 14px; }
+.brand {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px var(--amber-dim);
+}
+.tagline {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.55;
+  letter-spacing: 0.04em;
+}
+
+.call-block {
+  border-top: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+  padding: 12px 0;
+  margin-bottom: 14px;
+}
+.call-line {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.direction { margin-right: 10px; }
+#call-direction.LONG { color: var(--green); }
+#call-direction.SHORT { color: var(--red); }
+.call-prices {
+  margin-top: 8px;
+  display: flex;
+  gap: 28px;
+  font-size: 13px;
+}
+.call-prices .label {
+  display: block;
+  opacity: 0.5;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.call-prices .value { font-size: 15px; }
+
+.confidence-block { margin-bottom: 12px; }
+.confidence-label {
+  font-size: 10px;
+  opacity: 0.55;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.confidence-value {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 8px;
+  transition: color 0.6s ease;
+}
+.confidence-bar {
+  height: 8px;
+  background: rgba(255, 176, 0, 0.1);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+#confidence-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--amber);
+  transition: width 0.6s ease, background 0.6s ease;
+}
+
+.commentary {
+  font-size: 12px;
+  opacity: 0.8;
+  min-height: 2.4em;
+}
+
+/* ---- participants panel ---------------------------------------------*/
+#participants-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.participants-label {
+  font-size: 10px;
+  opacity: 0.55;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.participants-value {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 10px var(--amber-dim);
+}
+.participants-hint {
+  margin-top: 8px;
+  font-size: 10px;
+  opacity: 0.45;
+  max-width: 16em;
+}
+
+/* ---- backtest panel ---------------------------------------------------*/
+.backtest-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+#sharpe-value { color: var(--green); }
+#backtest-canvas {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+/* ---- footer disclosure ------------------------------------------------*/
+#disclosure {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px 40px;
+  font-size: 9.5px;
+  line-height: 1.6;
+  opacity: 0.35;
+  letter-spacing: 0.01em;
+}
+
+/* ---- reveal panel (shared pattern) -------------------------------------*/
+#reveal {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(8, 6, 10, 0.6);
+  color: var(--amber-dim);
+  font: 13px/1 var(--mono);
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 60;
+}
+#reveal:hover { opacity: 1; transform: scale(1.08); }
+
+#panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(420px, 92vw);
+  background: rgba(8, 6, 10, 0.92);
+  backdrop-filter: blur(6px);
+  border-left: 1px solid var(--border);
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+  z-index: 59;
+  color: rgba(255, 210, 140, 0.85);
+  font: 13px/1.55 var(--mono);
+}
+#panel.open { transform: translateX(0); }
+#panel-inner { padding: 56px 22px 22px; height: 100%; overflow-y: auto; }
+.panel-block { margin-bottom: 20px; }
+.panel-block h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--amber);
+  opacity: 0.8;
+  font-weight: 500;
+}
+.panel-block p { margin: 0 0 10px; opacity: 0.85; }
+.panel-block em { color: var(--amber); font-style: normal; }
