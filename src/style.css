@@ -1,0 +1,228 @@
+
+  :root {
+    --void: #0a0d13;
+    --panel: #12161f;
+    --line: #262c3a;
+    --ink: #e4e8ef;
+    --muted: #7d8598;
+    --accent: #5fd9b8;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--void);
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: row;
+    font-family: "New York", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--void);
+    padding: 28px;
+  }
+
+  #gl {
+    width: 100%;
+    height: 100%;
+    max-width: 900px;
+    max-height: 900px;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: crosshair;
+    touch-action: none;
+    background: #000;
+  }
+
+  #fallback {
+    display: none;
+    max-width: 46ch;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .rail {
+    flex: 0 0 360px;
+    max-width: 360px;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    padding: 30px 28px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-size: 25px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0 0 12px;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+
+  .lede {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+    opacity: 0.86;
+  }
+
+  .lede + .lede {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--line);
+    border: none;
+    margin: 0;
+  }
+
+  section.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .param-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .param-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .param-head span.val {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 12px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    border-radius: 1px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--void);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--void);
+  }
+  input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(95, 217, 184, 0.35);
+  }
+
+  .presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  button {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 9px 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(95, 217, 184, 0.45);
+  }
+  button.active {
+    border-color: var(--accent);
+    background: rgba(95, 217, 184, 0.08);
+    color: var(--accent);
+  }
+
+  #reseed {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .hint {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    body { flex-direction: column; overflow-y: auto; overflow-x: hidden; height: auto; min-height: 100%; }
+    .stage { padding: 18px 18px 0; }
+    #gl { max-width: 100%; }
+    .rail { flex: 1 1 auto; max-width: none; border-left: none; border-top: 1px solid var(--line); }
+  }
+

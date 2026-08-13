@@ -9,12 +9,74 @@ blobs, chaotic waves, or dies out entirely. This is the same reaction
 Alan Turing used in 1952 to explain a leopard's spots and a zebra's
 stripes as one chemical process with no plan for either.
 
-Single self-contained HTML file, no build step, no dependencies - open
-`index.html` in any browser with WebGL2 and floating-point render
-targets (every evergreen desktop/mobile browser as of the last several
-years).
+No build step, no dependencies - native ES modules throughout. Serve
+the directory with any static file server and open it:
 
-## How it works
+```sh
+python3 -m http.server 8080
+```
+
+(Opening `index.html` directly via `file://` mostly works too, but some
+browsers restrict WebGL a bit more strictly there - serving it is safer,
+and it's how this is actually deployed, via GitHub Pages.)
+
+## Theory
+
+Two species, U and V, react by:
+
+```
+U + 2V → 3V      (V is autocatalytic: it consumes U to make more of itself)
+V → P            (V decays into an inert product P)
+```
+
+That single fact - V catalyzing its own production while also decaying -
+is the entire mechanism. Written as PDEs:
+
+$$\frac{\partial u}{\partial t} = D_u \nabla^2 u - uv^2 + F(1 - u)$$
+
+$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + uv^2 - (F + K)v$$
+
+- `uv²` is the reaction itself (mass-action kinetics for `U + 2V → 3V`):
+  it consumes U and produces V, at a rate proportional to `u` and to
+  `v²`.
+- `F(1 - u)` is the **feed**: U is continuously replenished toward a
+  concentration of 1, at rate `F`. Without this term the reaction would
+  simply consume all the U and stop.
+- `(F + K)v` is the **removal**: V is drained away at combined rate
+  `F + K`, where `K` is the parameter this file calls "kill rate."
+- `D_u∇²u` and `D_v∇²v` are ordinary diffusion - each species spreading
+  down its own concentration gradient.
+
+The counterintuitive part is that diffusion, which normally *erases*
+differences and smooths everything toward uniformity, is exactly what
+*creates* the pattern here. A perfectly uniform mixture of U and V is
+stable on its own - nothing happens. But because U diffuses faster than
+V (`D_u = 1.0`, `D_v = 0.5` in this file - a 2:1 ratio, matching
+cselab's implementation below despite different units), a small random
+fluctuation stops smoothing away and instead grows: V briefly
+concentrates, consumes nearby U faster than U can diffuse back in to
+replace it, and a stable spot or stripe is born. This is a **Turing
+instability** - diffusion-driven pattern formation - and it's the exact
+mechanism Alan Turing proposed in his 1952 paper *"The Chemical Basis
+of Morphogenesis"* for how a spatially uniform embryo ends up with
+spots, stripes, or segments, with no template or blueprint anywhere in
+the system telling it what shape to become.
+
+## Structure
+
+```
+index.html          canvas + control rail markup, loads src/main.js as a module
+src/style.css        all styling
+src/shaders.js        GLSL ES 3.00 sources (vertex, step, render)
+src/gl-utils.js        generic WebGL2 helpers - no Gray-Scott-specific knowledge,
+                        reusable for any GPU ping-pong simulation
+src/gray-scott.js       the GrayScott class: owns the GL context, compiled
+                         programs, ping-ponging simulation state, params, presets
+src/ui.js             wires the DOM (sliders, presets, pointer injection) to a
+                       GrayScott instance
+src/main.js           entry point: creates the simulation, wires the UI, runs
+                       the render loop
+```
 
 - **Simulation**: a 256&times;256 grid, stepped forward entirely on the
   GPU via WebGL2 fragment shaders - a nine-point discrete Laplacian for
@@ -26,7 +88,26 @@ years).
   warm gold) and draws it to the visible canvas.
 - **Interaction**: dragging the Feed/Kill sliders changes the reaction
   live, mid-simulation. Clicking or touching the chamber injects extra
-  reagent at that point on every subsequent step while held. The six
+  reagent at that point on every subsequent step while held. The seven
   presets are real named regions from the commonly-referenced Gray-Scott
-  parameter map (Spots, Coral, Mitosis, Worms, Waves, Solitons), not
-  arbitrary points.
+  parameter map, not arbitrary points.
+
+## Prior art & further reading
+
+- [cselab/gray-scott](https://github.com/cselab/gray-scott) (ETH
+  Zurich) - a Python/NumPy implementation that reproduces L.N.
+  Trefethen's [Chebfun Gray-Scott
+  demo](https://www.chebfun.org/examples/pde/GrayScott.html), showing
+  how a small change from `F=0.04` to `F=0.025` (at `kappa=0.06`) flips
+  the pattern from rolls to spots.
+- The **Rolls** preset here uses that same `F=0.04, K=0.06` pair. Worth
+  being honest about what that does and doesn't mean: this file and
+  cselab's solve the identical Gray-Scott equations with the same
+  `Du:Dv = 2:1` diffusion ratio, but non-dimensionalized differently -
+  this implementation uses the "unit grid spacing" convention common in
+  shader/creative-coding implementations (from Pearson's classification
+  and Munafo's parameter map, where the other six presets come from),
+  while cselab solves on a real spatial domain with physical
+  diffusivities divided by actual grid spacing. Same reaction, same
+  ratio, different scale - so the preset lands in the right regime, not
+  a guaranteed pixel-identical reproduction of their figure.
