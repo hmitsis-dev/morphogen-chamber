@@ -1,0 +1,652 @@
+<title>Morphogen Chamber</title>
+<style>
+  :root {
+    --void: #0a0d13;
+    --panel: #12161f;
+    --line: #262c3a;
+    --ink: #e4e8ef;
+    --muted: #7d8598;
+    --accent: #5fd9b8;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--void);
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: row;
+    font-family: "New York", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--void);
+    padding: 28px;
+  }
+
+  #gl {
+    width: 100%;
+    height: 100%;
+    max-width: 900px;
+    max-height: 900px;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: crosshair;
+    touch-action: none;
+    background: #000;
+  }
+
+  #fallback {
+    display: none;
+    max-width: 46ch;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .rail {
+    flex: 0 0 360px;
+    max-width: 360px;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    padding: 30px 28px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-size: 25px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0 0 12px;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+
+  .lede {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+    opacity: 0.86;
+  }
+
+  .lede + .lede {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--line);
+    border: none;
+    margin: 0;
+  }
+
+  section.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .param-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .param-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .param-head span.val {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 12px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    border-radius: 1px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--void);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--void);
+  }
+  input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(95, 217, 184, 0.35);
+  }
+
+  .presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  button {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 9px 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(95, 217, 184, 0.45);
+  }
+  button.active {
+    border-color: var(--accent);
+    background: rgba(95, 217, 184, 0.08);
+    color: var(--accent);
+  }
+
+  #reseed {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .hint {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    body { flex-direction: column; overflow-y: auto; overflow-x: hidden; height: auto; min-height: 100%; }
+    .stage { padding: 18px 18px 0; }
+    #gl { max-width: 100%; }
+    .rail { flex: 1 1 auto; max-width: none; border-left: none; border-top: 1px solid var(--line); }
+  }
+</style>
+
+<div class="stage">
+  <canvas id="gl"></canvas>
+  <p id="fallback">
+    This chamber needs WebGL2 with floating-point render targets, which
+    this browser or device doesn't expose. Try a recent desktop version
+    of Chrome, Firefox, Edge, or Safari.
+  </p>
+</div>
+
+<aside class="rail">
+  <div>
+    <p class="eyebrow">Reaction&ndash;diffusion &middot; Gray&ndash;Scott model</p>
+    <h1>Morphogen Chamber</h1>
+    <p class="lede">
+      Two chemicals spread across a grid and react with each other.
+      Nothing here is designed &mdash; not the spots, not the stripes,
+      not the slow pulsing mitosis. They fall out of two numbers, feed
+      and kill, the same way Alan Turing's 1952 model explained a
+      leopard's spots and a zebra's stripes as one chemical process
+      with no plan for either.
+    </p>
+    <p class="lede">
+      Drag the sliders to move through the parameter space live.
+      Click or touch the chamber to add reagent by hand.
+    </p>
+  </div>
+
+  <hr class="divider" />
+
+  <section class="controls">
+    <div class="param-row">
+      <div class="param-head">
+        <label for="feed">Feed rate &middot; F</label>
+        <span class="val" id="feedVal">0.035</span>
+      </div>
+      <input type="range" id="feed" min="0.0" max="0.08" step="0.0005" value="0.035" />
+    </div>
+    <div class="param-row">
+      <div class="param-head">
+        <label for="kill">Kill rate &middot; K</label>
+        <span class="val" id="killVal">0.062</span>
+      </div>
+      <input type="range" id="kill" min="0.03" max="0.075" step="0.0005" value="0.062" />
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <section>
+    <p class="eyebrow">Named regimes</p>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <button id="reseed">Reseed the chamber</button>
+
+  <p class="hint">
+    Simulated at 256&times;256 on a wrapped grid, stepped forward on
+    the GPU. What you're watching is being computed right now, not
+    played back.
+  </p>
+</aside>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("gl");
+  const fallback = document.getElementById("fallback");
+  const stage = canvas.parentElement;
+
+  function fail(msg) {
+    canvas.style.display = "none";
+    fallback.style.display = "block";
+    fallback.textContent = msg;
+    throw new Error(msg);
+  }
+
+  const gl = canvas.getContext("webgl2", { antialias: false, preserveDrawingBuffer: false });
+  if (!gl) fail("This chamber needs WebGL2, which this browser doesn't expose.");
+  const floatExt = gl.getExtension("EXT_color_buffer_float");
+  if (!floatExt) fail("This chamber needs floating-point render targets (EXT_color_buffer_float), which this browser doesn't expose.");
+
+  const SIM = 256;
+
+  // ---- shader plumbing ---------------------------------------------------
+  function compile(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(shader);
+      gl.deleteShader(shader);
+      fail("Shader failed to compile: " + log);
+    }
+    return shader;
+  }
+
+  function link(vsSource, fsSource) {
+    const program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      fail("Program failed to link: " + gl.getProgramInfoLog(program));
+    }
+    return program;
+  }
+
+  const VERTEX_SRC = `#version 300 es
+    in vec2 aPos;
+    out vec2 vUv;
+    void main() {
+      vUv = aPos * 0.5 + 0.5;
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+  `;
+
+  const STEP_SRC = `#version 300 es
+    precision highp float;
+    in vec2 vUv;
+    out vec4 outColor;
+
+    uniform sampler2D uState;
+    uniform vec2 uTexel;
+    uniform float uF;
+    uniform float uK;
+    uniform float uDu;
+    uniform float uDv;
+    uniform float uDt;
+    uniform vec2 uInjectPos;
+    uniform float uInjectActive;
+    uniform float uInjectRadius;
+
+    void main() {
+      vec2 c  = texture(uState, vUv).rg;
+      vec2 n  = texture(uState, vUv + vec2(0.0,  uTexel.y)).rg;
+      vec2 s  = texture(uState, vUv - vec2(0.0,  uTexel.y)).rg;
+      vec2 e  = texture(uState, vUv + vec2(uTexel.x, 0.0)).rg;
+      vec2 w  = texture(uState, vUv - vec2(uTexel.x, 0.0)).rg;
+      vec2 ne = texture(uState, vUv + vec2(uTexel.x,  uTexel.y)).rg;
+      vec2 nw = texture(uState, vUv + vec2(-uTexel.x, uTexel.y)).rg;
+      vec2 se = texture(uState, vUv + vec2(uTexel.x, -uTexel.y)).rg;
+      vec2 sw = texture(uState, vUv + vec2(-uTexel.x, -uTexel.y)).rg;
+
+      // nine-point discrete Laplacian
+      vec2 lap = (n + s + e + w) * 0.2
+               + (ne + nw + se + sw) * 0.05
+               - c;
+
+      float u = c.r;
+      float v = c.g;
+      float uvv = u * v * v;
+
+      float du = uDu * lap.r - uvv + uF * (1.0 - u);
+      float dv = uDv * lap.g + uvv - (uF + uK) * v;
+
+      u += du * uDt;
+      v += dv * uDt;
+
+      if (uInjectActive > 0.5) {
+        float d = distance(vUv, uInjectPos);
+        float bump = smoothstep(uInjectRadius, 0.0, d);
+        v = clamp(v + bump * 0.9, 0.0, 1.0);
+        u = clamp(u - bump * 0.3, 0.0, 1.0);
+      }
+
+      outColor = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), 0.0, 1.0);
+    }
+  `;
+
+  const RENDER_SRC = `#version 300 es
+    precision highp float;
+    in vec2 vUv;
+    out vec4 outColor;
+    uniform sampler2D uState;
+
+    vec3 palette(float t) {
+      vec3 c0 = vec3(0.035, 0.045, 0.07);
+      vec3 c1 = vec3(0.16, 0.10, 0.32);
+      vec3 c2 = vec3(0.09, 0.55, 0.52);
+      vec3 c3 = vec3(0.95, 0.85, 0.55);
+      vec3 a = mix(c0, c1, smoothstep(0.0, 0.38, t));
+      vec3 b = mix(a, c2, smoothstep(0.30, 0.68, t));
+      return mix(b, c3, smoothstep(0.62, 1.0, t));
+    }
+
+    void main() {
+      vec2 uv = texture(uState, vUv).rg;
+      float t = clamp((uv.g - 0.02) * 2.6, 0.0, 1.0);
+      outColor = vec4(palette(t), 1.0);
+    }
+  `;
+
+  const stepProgram = link(VERTEX_SRC, STEP_SRC);
+  const renderProgram = link(VERTEX_SRC, RENDER_SRC);
+
+  // full-screen quad, shared by both programs
+  const quadBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+  function bindQuad(program) {
+    const loc = gl.getAttribLocation(program, "aPos");
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  }
+
+  // ---- ping-pong simulation state ----------------------------------------
+  function makeSeed() {
+    const data = new Float32Array(SIM * SIM * 4);
+    for (let i = 0; i < SIM * SIM; i++) {
+      data[i * 4 + 0] = 1.0; // U
+      data[i * 4 + 1] = 0.0; // V
+      data[i * 4 + 2] = 0.0;
+      data[i * 4 + 3] = 1.0;
+    }
+    const blobs = 5 + Math.floor(Math.random() * 4);
+    for (let b = 0; b < blobs; b++) {
+      const cx = Math.floor(SIM * (0.3 + Math.random() * 0.4));
+      const cy = Math.floor(SIM * (0.3 + Math.random() * 0.4));
+      const r = 4 + Math.floor(Math.random() * 5);
+      for (let y = -r; y <= r; y++) {
+        for (let x = -r; x <= r; x++) {
+          if (x * x + y * y > r * r) continue;
+          const px = ((cx + x) % SIM + SIM) % SIM;
+          const py = ((cy + y) % SIM + SIM) % SIM;
+          const idx = (py * SIM + px) * 4;
+          data[idx + 0] = 0.5 + (Math.random() - 0.5) * 0.05;
+          data[idx + 1] = 0.25 + (Math.random() - 0.5) * 0.05;
+        }
+      }
+    }
+    return data;
+  }
+
+  function makeFbo() {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, SIM, SIM, 0, gl.RGBA, gl.HALF_FLOAT, null);
+
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    if (status !== gl.FRAMEBUFFER_COMPLETE) {
+      fail("This chamber's render target isn't supported on this device (status " + status + ").");
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { fbo, tex };
+  }
+
+  let states = [makeFbo(), makeFbo()];
+  let current = 0;
+
+  function uploadSeed() {
+    const data = makeSeed();
+    for (const s of states) {
+      gl.bindTexture(gl.TEXTURE_2D, s.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, SIM, SIM, 0, gl.RGBA, gl.FLOAT, data);
+    }
+  }
+  uploadSeed();
+
+  // ---- parameters ---------------------------------------------------------
+  const params = { F: 0.035, K: 0.062, Du: 1.0, Dv: 0.5, dt: 1.0 };
+
+  const PRESETS = [
+    { name: "Spots", F: 0.035, K: 0.065 },
+    { name: "Coral", F: 0.058, K: 0.065 },
+    { name: "Mitosis", F: 0.028, K: 0.062 },
+    { name: "Worms", F: 0.078, K: 0.061 },
+    { name: "Waves", F: 0.014, K: 0.045 },
+    { name: "Solitons", F: 0.030, K: 0.057 },
+  ];
+
+  // ---- pointer injection ---------------------------------------------------
+  const inject = { active: false, x: 0.5, y: 0.5 };
+
+  function pointerToUv(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left) / rect.width;
+    const y = 1.0 - (evt.clientY - rect.top) / rect.height;
+    return [x, y];
+  }
+  canvas.addEventListener("pointerdown", (e) => {
+    inject.active = true;
+    [inject.x, inject.y] = pointerToUv(e);
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!inject.active) return;
+    [inject.x, inject.y] = pointerToUv(e);
+  });
+  window.addEventListener("pointerup", () => { inject.active = false; });
+
+  // ---- uniforms -------------------------------------------------------------
+  const stepU = {
+    uState: gl.getUniformLocation(stepProgram, "uState"),
+    uTexel: gl.getUniformLocation(stepProgram, "uTexel"),
+    uF: gl.getUniformLocation(stepProgram, "uF"),
+    uK: gl.getUniformLocation(stepProgram, "uK"),
+    uDu: gl.getUniformLocation(stepProgram, "uDu"),
+    uDv: gl.getUniformLocation(stepProgram, "uDv"),
+    uDt: gl.getUniformLocation(stepProgram, "uDt"),
+    uInjectPos: gl.getUniformLocation(stepProgram, "uInjectPos"),
+    uInjectActive: gl.getUniformLocation(stepProgram, "uInjectActive"),
+    uInjectRadius: gl.getUniformLocation(stepProgram, "uInjectRadius"),
+  };
+  const renderU = {
+    uState: gl.getUniformLocation(renderProgram, "uState"),
+  };
+
+  const STEPS_PER_FRAME = 16;
+
+  function step() {
+    gl.viewport(0, 0, SIM, SIM);
+    gl.useProgram(stepProgram);
+    bindQuad(stepProgram);
+    gl.uniform2f(stepU.uTexel, 1 / SIM, 1 / SIM);
+    gl.uniform1f(stepU.uF, params.F);
+    gl.uniform1f(stepU.uK, params.K);
+    gl.uniform1f(stepU.uDu, params.Du);
+    gl.uniform1f(stepU.uDv, params.Dv);
+    gl.uniform1f(stepU.uDt, params.dt);
+    gl.uniform1f(stepU.uInjectActive, inject.active ? 1.0 : 0.0);
+    gl.uniform2f(stepU.uInjectPos, inject.x, inject.y);
+    gl.uniform1f(stepU.uInjectRadius, 0.02);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(stepU.uState, 0);
+
+    for (let i = 0; i < STEPS_PER_FRAME; i++) {
+      const from = states[current];
+      const to = states[1 - current];
+      gl.bindFramebuffer(gl.FRAMEBUFFER, to.fbo);
+      gl.bindTexture(gl.TEXTURE_2D, from.tex);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      current = 1 - current;
+    }
+  }
+
+  function render() {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.round(canvas.clientWidth * dpr);
+    const h = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(renderProgram);
+    bindQuad(renderProgram);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, states[current].tex);
+    gl.uniform1i(renderU.uState, 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  function frame() {
+    step();
+    render();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- UI wiring -------------------------------------------------------------
+  const feedSlider = document.getElementById("feed");
+  const killSlider = document.getElementById("kill");
+  const feedVal = document.getElementById("feedVal");
+  const killVal = document.getElementById("killVal");
+  const presetsEl = document.getElementById("presets");
+  const reseedBtn = document.getElementById("reseed");
+
+  function syncReadouts() {
+    feedVal.textContent = params.F.toFixed(4);
+    killVal.textContent = params.K.toFixed(4);
+  }
+
+  function clearActivePreset() {
+    for (const btn of presetsEl.children) btn.classList.remove("active");
+  }
+
+  feedSlider.addEventListener("input", () => {
+    params.F = parseFloat(feedSlider.value);
+    syncReadouts();
+    clearActivePreset();
+  });
+  killSlider.addEventListener("input", () => {
+    params.K = parseFloat(killSlider.value);
+    syncReadouts();
+    clearActivePreset();
+  });
+
+  PRESETS.forEach((preset) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = preset.name;
+    btn.addEventListener("click", () => {
+      params.F = preset.F;
+      params.K = preset.K;
+      feedSlider.value = String(preset.F);
+      killSlider.value = String(preset.K);
+      syncReadouts();
+      clearActivePreset();
+      btn.classList.add("active");
+      uploadSeed();
+    });
+    presetsEl.appendChild(btn);
+  });
+
+  reseedBtn.addEventListener("click", () => {
+    uploadSeed();
+  });
+
+  syncReadouts();
+})();
+</script>
