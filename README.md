@@ -90,3 +90,15 @@ src/main.js           entry point: creates the simulation, wires the UI, runs
   reagent at that point on every subsequent step while held. The seven
   presets are real named regions from the commonly-referenced Gray-Scott
   parameter map, not arbitrary points.
+
+## References
+
+1. P. Gray and S. K. Scott, *Chemical Oscillations and Instabilities:
+   Non-linear Chemical Kinetics*, v. 21 of International Series of
+   Monographs on Chemistry, 1994.
+2. L. N. Trefethen and K. Embree, editors, article 23 on "The
+   Gray-Scott equations," *The (Unfinished) PDE Coffee Table Book*,
+   https://people.maths.ox.ac.uk/trefethen/pdectb.html.
+3. H. Montanelli and N. Bootland, *Solving periodic semilinear stiff
+   PDEs in 1D, 2D and 3D with exponential integrators*, submitted,
+   2016.
