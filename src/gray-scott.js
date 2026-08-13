@@ -13,11 +13,6 @@ export const PRESETS = [
   { name: "Worms", F: 0.078, K: 0.061 },
   { name: "Waves", F: 0.014, K: 0.045 },
   { name: "Solitons", F: 0.030, K: 0.057 },
-  // F=0.04, K=0.06: the pair L.N. Trefethen uses in his Chebfun
-  // Gray-Scott demo (reproduced in cselab/gray-scott) to show "rolls."
-  // Same equations and the same Du:Dv=2:1 ratio as this file uses, on
-  // a different non-dimensionalization - see README for the honest
-  // caveat on why that means "analogous," not "pixel-identical."
   { name: "Rolls", F: 0.040, K: 0.060 },
 ];
 

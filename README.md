@@ -51,8 +51,7 @@ The counterintuitive part is that diffusion, which normally *erases*
 differences and smooths everything toward uniformity, is exactly what
 *creates* the pattern here. A perfectly uniform mixture of U and V is
 stable on its own - nothing happens. But because U diffuses faster than
-V (`D_u = 1.0`, `D_v = 0.5` in this file - a 2:1 ratio, matching
-cselab's implementation below despite different units), a small random
+V (`D_u = 1.0`, `D_v = 0.5` in this file - a 2:1 ratio), a small random
 fluctuation stops smoothing away and instead grows: V briefly
 concentrates, consumes nearby U faster than U can diffuse back in to
 replace it, and a stable spot or stripe is born. This is a **Turing
@@ -91,23 +90,3 @@ src/main.js           entry point: creates the simulation, wires the UI, runs
   reagent at that point on every subsequent step while held. The seven
   presets are real named regions from the commonly-referenced Gray-Scott
   parameter map, not arbitrary points.
-
-## Prior art & further reading
-
-- [cselab/gray-scott](https://github.com/cselab/gray-scott) (ETH
-  Zurich) - a Python/NumPy implementation that reproduces L.N.
-  Trefethen's [Chebfun Gray-Scott
-  demo](https://www.chebfun.org/examples/pde/GrayScott.html), showing
-  how a small change from `F=0.04` to `F=0.025` (at `kappa=0.06`) flips
-  the pattern from rolls to spots.
-- The **Rolls** preset here uses that same `F=0.04, K=0.06` pair. Worth
-  being honest about what that does and doesn't mean: this file and
-  cselab's solve the identical Gray-Scott equations with the same
-  `Du:Dv = 2:1` diffusion ratio, but non-dimensionalized differently -
-  this implementation uses the "unit grid spacing" convention common in
-  shader/creative-coding implementations (from Pearson's classification
-  and Munafo's parameter map, where the other six presets come from),
-  while cselab solves on a real spatial domain with physical
-  diffusivities divided by actual grid spacing. Same reaction, same
-  ratio, different scale - so the preset lands in the right regime, not
-  a guaranteed pixel-identical reproduction of their figure.
