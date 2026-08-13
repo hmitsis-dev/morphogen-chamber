@@ -1,4 +1,5 @@
 import { PRESETS } from "./gray-scott.js";
+import { analyze } from "./stability.js";
 
 // Wires the control rail (sliders, presets, reseed) and pointer
 // injection to a live GrayScott instance. Knows about the DOM;
@@ -10,10 +11,34 @@ export function setupUI(sim, canvas) {
   const killVal = document.getElementById("killVal");
   const presetsEl = document.getElementById("presets");
   const reseedBtn = document.getElementById("reseed");
+  const stabilityTrivial = document.getElementById("stability-trivial");
+  const stabilityNontrivial = document.getElementById("stability-nontrivial");
 
   function syncReadouts() {
     feedVal.textContent = sim.params.F.toFixed(4);
     killVal.textContent = sim.params.K.toFixed(4);
+    syncStability();
+  }
+
+  function syncStability() {
+    const a = analyze(sim.params.F, sim.params.K);
+    // a.trivialStable is provably true for every F,K > 0 - see stability.js -
+    // so this is reported, not branched on.
+    stabilityTrivial.innerHTML =
+      `(1,0): <span class="accent">stable</span> to every wavenumber ` +
+      `(&lambda;=&minus;F, &minus;(F+K)) &mdash; no pattern grows from noise here.`;
+
+    if (a.nontrivialExists && a.nontrivial) {
+      const [r1, r2] = a.nontrivial.roots;
+      stabilityNontrivial.innerHTML =
+        `Nontrivial state: <span class="accent">exists</span> ` +
+        `(v=${r1.v.toFixed(3)} or v=${r2.v.toFixed(3)})`;
+    } else {
+      stabilityNontrivial.innerHTML =
+        `Nontrivial state: <span class="accent">none</span> ` +
+        `(margin ${a.existenceMargin.toFixed(4)}) &mdash; pattern here is ` +
+        `finite-amplitude, not a small-noise instability.`;
+    }
   }
 
   function clearActivePreset() {

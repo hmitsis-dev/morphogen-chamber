@@ -98,6 +98,19 @@
     opacity: 0.86;
   }
 
+  .lede.small {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .lede.small + .lede.small {
+    margin-top: 6px;
+  }
+  .lede.small .accent {
+    color: var(--accent);
+  }
+
   .lede + .lede {
     margin-top: 10px;
     color: var(--muted);

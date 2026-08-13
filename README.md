@@ -61,6 +61,62 @@ of Morphogenesis"* for how a spatially uniform embryo ends up with
 spots, stripes, or segments, with no template or blueprint anywhere in
 the system telling it what shape to become.
 
+## Stability analysis
+
+`src/stability.js` derives, from `F` and `K` alone, what linear theory
+actually predicts about a uniform background - worked through and
+checked against the running simulation, not asserted.
+
+**The trivial state.** `(u, v) = (1, 0)` - pure U, no V anywhere - is
+always a steady state of the reaction terms, for any `F, K`. Its
+Jacobian, evaluated directly from `f = F(1-u) - uv^2` and
+`g = uv^2 - (F+K)v`, comes out exactly diagonal:
+
+$$J\Big|_{(1,0)} = \begin{pmatrix} -F & 0 \\ 0 & -(F+K) \end{pmatrix}$$
+
+Both eigenvalues are negative for any `F, K > 0` (verified numerically
+against a finite-difference Jacobian in the commit history, not just by
+hand). Adding diffusion perturbs a Fourier mode `e^{ikx+\sigma t}` by
+subtracting `D_u k^2` and `D_v k^2` from an already-negative diagonal -
+so `σ(k) < 0` for *every* wavenumber `k`, for every parameter choice.
+**There is no classical Turing bifurcation growing a pattern out of
+infinitesimal noise on this background.** That's not a simplification -
+it's why this project, like every other Gray-Scott implementation,
+seeds finite blobs of V by hand (`gray-scott.js`'s `makeSeed`) instead
+of starting from random noise: small perturbations here just decay.
+
+**The nontrivial state.** Solving the reaction system for `v ≠ 0` gives
+
+$$(F+K)v^2 - Fv + F(F+K) = 0$$
+
+which has real solutions only when `F ≥ 4(F+K)²` - an existence
+question with a sign change at its boundary, the kind Bolzano's
+intermediate value theorem answers directly (evaluate the quadratic at
+`v=0`, where it's `F(F+K) > 0`, and at its vertex, where it's negative
+exactly when this same condition holds - a sign change proves a root
+sits between them). Checked against every preset in this file:
+
+| Preset | F | K | Nontrivial state exists? |
+| :--- | ---: | ---: | :--- |
+| Spots | 0.035 | 0.065 | no |
+| Coral | 0.058 | 0.065 | no |
+| Mitosis | 0.028 | 0.062 | no |
+| Worms | 0.078 | 0.061 | **yes** |
+| Waves | 0.014 | 0.045 | **yes** |
+| Solitons | 0.030 | 0.057 | no (barely) |
+| Rolls | 0.040 | 0.060 | no (exactly at the boundary) |
+
+**The honest conclusion**: most of these presets sit close to that
+existence boundary, and several of the most visually striking ones
+(Spots, Mitosis) have no nontrivial homogeneous state at all. Gray-
+Scott's spots, stripes, and self-replicating blobs are not small-
+amplitude patterns growing out of a linear instability the way
+classical Turing models are commonly taught - they're a finite-
+amplitude, far-from-equilibrium phenomenon (Pearson 1993, see
+references). This module reports exactly what the linear theory says,
+honestly, rather than implying it explains everything the simulation
+does.
+
 ## Structure
 
 ```
@@ -71,8 +127,10 @@ src/gl-utils.js        generic WebGL2 helpers - no Gray-Scott-specific knowledge
                         reusable for any GPU ping-pong simulation
 src/gray-scott.js       the GrayScott class: owns the GL context, compiled
                          programs, ping-ponging simulation state, params, presets
-src/ui.js             wires the DOM (sliders, presets, pointer injection) to a
-                       GrayScott instance
+src/stability.js        the linear stability analysis - pure math, no GL,
+                         no DOM - see "Stability analysis" below
+src/ui.js             wires the DOM (sliders, presets, pointer injection, the
+                       live stability readout) to a GrayScott instance
 src/main.js           entry point: creates the simulation, wires the UI, runs
                        the render loop
 ```
@@ -102,3 +160,7 @@ src/main.js           entry point: creates the simulation, wires the UI, runs
 3. H. Montanelli and N. Bootland, *Solving periodic semilinear stiff
    PDEs in 1D, 2D and 3D with exponential integrators*, submitted,
    2016.
+4. J. E. Pearson, "Complex Patterns in a Simple System," *Science*,
+   vol. 261, 1993 - the paper that popularized Gray-Scott's pattern
+   zoo and the `F`/`k` parameter map this project's presets (other than
+   Rolls) are drawn from.
