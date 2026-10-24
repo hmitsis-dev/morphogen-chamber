@@ -1,14 +1,26 @@
-
   :root {
     --void: #0a0d13;
     --panel: #12161f;
+    --card: #171c27;
     --line: #262c3a;
     --ink: #e4e8ef;
-    --muted: #7d8598;
+    --muted: #8a92a6;
     --accent: #5fd9b8;
+    --accent-soft: rgba(95, 217, 184, 0.12);
+
+    --serif: "New York", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+    --gutter: 28px;
   }
 
   * { box-sizing: border-box; }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 
   html, body {
     margin: 0;
@@ -23,8 +35,12 @@
   body {
     display: flex;
     flex-direction: row;
-    font-family: "New York", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* ---------- Stage ---------- */
 
   .stage {
     position: relative;
@@ -38,14 +54,12 @@
   }
 
   #gl {
-    width: 100%;
-    height: 100%;
-    max-width: 900px;
-    max-height: 900px;
+    width: min(100%, 900px, calc(100vh - 56px));
+    height: auto;
     aspect-ratio: 1 / 1;
     display: block;
     border: 1px solid var(--line);
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: crosshair;
     touch-action: none;
     background: #000;
@@ -60,89 +74,84 @@
     text-align: center;
   }
 
+  /* ---------- Rail ---------- */
+
   .rail {
-    flex: 0 0 360px;
-    max-width: 360px;
+    flex: 0 0 380px;
+    max-width: 380px;
     border-left: 1px solid var(--line);
     background: var(--panel);
-    padding: 30px 28px 24px;
+    padding: 32px var(--gutter) 28px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 20px;
   }
 
   .eyebrow {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-family: var(--mono);
     font-size: 11px;
+    font-weight: 500;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--accent);
-    margin: 0 0 6px;
+    margin: 0 0 8px;
   }
 
   h1 {
-    font-size: 25px;
+    font-family: var(--serif);
+    font-size: 28px;
     font-weight: 600;
-    line-height: 1.15;
-    margin: 0 0 12px;
+    line-height: 1.1;
+    margin: 0;
     text-wrap: balance;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
   }
 
   .lede {
     margin: 0;
-    font-size: 14px;
+    font-size: 14.5px;
     line-height: 1.65;
     color: var(--ink);
-    opacity: 0.86;
+    opacity: 0.88;
+    text-wrap: pretty;
   }
 
-  .lede.small {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 11.5px;
-    line-height: 1.6;
+  .howto {
+    margin: -8px 0 0;
+    font-size: 13.5px;
+    line-height: 1.55;
     color: var(--muted);
   }
-  .lede.small + .lede.small {
-    margin-top: 6px;
-  }
-  .lede.small .accent {
-    color: var(--accent);
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
   }
 
-  .lede + .lede {
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 13px;
-  }
+  /* ---------- Sliders ---------- */
 
-  .divider {
-    height: 1px;
-    background: var(--line);
-    border: none;
-    margin: 0;
-  }
-
-  section.controls {
+  .controls {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
   }
 
   .param-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   .param-head {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-family: var(--mono);
     font-size: 11px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
   }
@@ -152,62 +161,90 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
     text-transform: none;
-    font-size: 12px;
+    font-size: 13px;
   }
 
   input[type="range"] {
+    --fill: 50%;
+    --thumb: 16px;
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 2px;
-    background: var(--line);
-    border-radius: 1px;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
     outline: none;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--accent) 0 var(--fill), var(--line) var(--fill) 100%);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+  }
+  input[type="range"]::-moz-range-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
   }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
+    width: var(--thumb);
+    height: var(--thumb);
+    margin-top: calc((4px - var(--thumb)) / 2);
     border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid var(--void);
-    box-shadow: 0 0 0 1px var(--accent);
+    background: var(--ink);
+    border: 3px solid var(--accent);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   }
   input[type="range"]::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
+    width: var(--thumb);
+    height: var(--thumb);
     border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid var(--void);
+    background: var(--ink);
+    border: 3px solid var(--accent);
+    box-sizing: border-box;
   }
   input[type="range"]:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px rgba(95, 217, 184, 0.35);
+    box-shadow: 0 0 0 4px rgba(95, 217, 184, 0.35);
+  }
+  input[type="range"]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(95, 217, 184, 0.35);
   }
 
+  /* ---------- Buttons ---------- */
+
   .presets {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
 
   button {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 11.5px;
+    font-family: var(--mono);
+    font-size: 12px;
     letter-spacing: 0.03em;
     color: var(--ink);
     background: transparent;
     border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 9px 10px;
-    text-align: left;
+    border-radius: 999px;
+    padding: 8px 14px;
+    min-height: 36px;
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  button:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+  @media (hover: hover) {
+    button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+  button:active {
+    background: var(--accent-soft);
   }
   button:focus-visible {
     outline: none;
@@ -215,27 +252,134 @@
   }
   button.active {
     border-color: var(--accent);
-    background: rgba(95, 217, 184, 0.08);
+    background: var(--accent-soft);
     color: var(--accent);
   }
 
   #reseed {
-    text-align: center;
-    padding: 10px;
+    width: 100%;
+    min-height: 44px;
+    border-radius: 10px;
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  @media (hover: hover) {
+    #reseed:hover { background: var(--accent-soft); }
+  }
+
+  /* ---------- Stability card ---------- */
+
+  .stability {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stability .eyebrow { margin: 0; }
+
+  .stat {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 4px 12px;
+  }
+  .stat + .stat {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .stat-k {
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .stat-k code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stat-v {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 3px 9px;
+  }
+  .stat-note {
+    grid-column: 1 / -1;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .stat-note .num {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
   }
 
   .hint {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-family: var(--mono);
     font-size: 11px;
     color: var(--muted);
     line-height: 1.6;
     margin: 0;
   }
 
-  @media (max-width: 860px) {
-    body { flex-direction: column; overflow-y: auto; overflow-x: hidden; height: auto; min-height: 100%; }
-    .stage { padding: 18px 18px 0; }
-    #gl { max-width: 100%; }
-    .rail { flex: 1 1 auto; max-width: none; border-left: none; border-top: 1px solid var(--line); }
-  }
+  /* ---------- Phones & narrow windows ---------- */
 
+  @media (max-width: 860px) {
+    :root { --gutter: 16px; }
+
+    html, body {
+      height: auto;
+      min-height: 100%;
+      overflow: visible;
+    }
+    body {
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Keep the chamber pinned while the controls scroll beneath it,
+       so slider changes are visible as they happen. */
+    .stage {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: calc(12px + env(safe-area-inset-top)) var(--gutter) 12px;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    #gl {
+      width: min(100%, 44vh);
+      width: min(100%, 44svh);
+    }
+
+    .rail {
+      flex: 1 1 auto;
+      max-width: none;
+      overflow: visible;
+      border-left: none;
+      padding: 20px var(--gutter) calc(28px + env(safe-area-inset-bottom));
+      gap: 18px;
+    }
+
+    /* Put the interactive pieces first; the reading comes after. */
+    .intro    { order: 0; }
+    .howto    { order: 1; }
+    .controls { order: 2; }
+    .regimes  { order: 3; }
+    #reseed   { order: 4; }
+    .stability { order: 5; }
+    .about    { order: 6; padding-top: 18px; border-top: 1px solid var(--line); }
+    .hint     { order: 7; }
+
+    h1 { font-size: 24px; }
+    .eyebrow { margin-bottom: 6px; }
+    .howto { margin-top: -10px; }
+
+    input[type="range"] { --thumb: 22px; height: 36px; }
+
+    .presets button { flex: 1 1 calc(25% - 8px); min-height: 40px; padding: 8px 6px; text-align: center; }
+  }

@@ -14,9 +14,19 @@ export function setupUI(sim, canvas) {
   const stabilityTrivial = document.getElementById("stability-trivial");
   const stabilityNontrivial = document.getElementById("stability-nontrivial");
 
+  // Paints the filled part of a slider's track up to its thumb.
+  function syncFill(slider) {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const pct = ((parseFloat(slider.value) - min) / (max - min)) * 100;
+    slider.style.setProperty("--fill", `${pct}%`);
+  }
+
   function syncReadouts() {
     feedVal.textContent = sim.params.F.toFixed(4);
     killVal.textContent = sim.params.K.toFixed(4);
+    syncFill(feedSlider);
+    syncFill(killSlider);
     syncStability();
   }
 
@@ -25,19 +35,27 @@ export function setupUI(sim, canvas) {
     // a.trivialStable is provably true for every F,K > 0 - see stability.js -
     // so this is reported, not branched on.
     stabilityTrivial.innerHTML =
-      `(1,0): <span class="accent">stable</span> to every wavenumber ` +
-      `(&lambda;=&minus;F, &minus;(F+K)) &mdash; no pattern grows from noise here.`;
+      `<span class="stat-k">Uniform state <code>(1, 0)</code></span>` +
+      `<span class="stat-v">stable</span>` +
+      `<span class="stat-note">Stable to every wavenumber ` +
+      `(<span class="num">&lambda; = &minus;F, &minus;(F+K)</span>) &mdash; ` +
+      `no pattern grows from noise here.</span>`;
 
     if (a.nontrivialExists && a.nontrivial) {
       const [r1, r2] = a.nontrivial.roots;
       stabilityNontrivial.innerHTML =
-        `Nontrivial state: <span class="accent">exists</span> ` +
-        `(v=${r1.v.toFixed(3)} or v=${r2.v.toFixed(3)})`;
+        `<span class="stat-k">Nontrivial state</span>` +
+        `<span class="stat-v">exists</span>` +
+        `<span class="stat-note">Steady states at ` +
+        `<span class="num">v = ${r1.v.toFixed(3)}</span> and ` +
+        `<span class="num">v = ${r2.v.toFixed(3)}</span>.</span>`;
     } else {
       stabilityNontrivial.innerHTML =
-        `Nontrivial state: <span class="accent">none</span> ` +
-        `(margin ${a.existenceMargin.toFixed(4)}) &mdash; pattern here is ` +
-        `finite-amplitude, not a small-noise instability.`;
+        `<span class="stat-k">Nontrivial state</span>` +
+        `<span class="stat-v">none</span>` +
+        `<span class="stat-note">Existence margin ` +
+        `<span class="num">${a.existenceMargin.toFixed(4)}</span> &mdash; ` +
+        `pattern here is finite-amplitude, not a small-noise instability.</span>`;
     }
   }
 

@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d13">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Live Gray-Scott reaction-diffusion, simulated on the GPU in your browser.">
 <title>Morphogen Chamber</title>
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
 
 <div class="stage">
-  <canvas id="gl"></canvas>
+  <canvas id="gl" aria-label="Live reaction-diffusion simulation"></canvas>
   <p id="fallback">
     This chamber needs WebGL2 with floating-point render targets, which
     this browser or device doesn't expose. Try a recent desktop version
@@ -18,26 +21,26 @@
 </div>
 
 <aside class="rail">
-  <div>
+  <header class="intro">
     <p class="eyebrow">Reaction&ndash;diffusion &middot; Gray&ndash;Scott model</p>
     <h1>Morphogen Chamber</h1>
-    <p class="lede">
-      Two chemicals spread across a grid and react with each other.
-      Nothing here is designed &mdash; not the spots, not the stripes,
-      not the slow pulsing mitosis. They fall out of two numbers, feed
-      and kill, the same way Alan Turing's 1952 model explained a
-      leopard's spots and a zebra's stripes as one chemical process
-      with no plan for either.
-    </p>
-    <p class="lede">
-      Drag the sliders to move through the parameter space live.
-      Click or touch the chamber to add reagent by hand.
-    </p>
-  </div>
+  </header>
 
-  <hr class="divider" />
+  <p class="lede about">
+    Two chemicals spread across a grid and react with each other.
+    Nothing here is designed &mdash; not the spots, not the stripes,
+    not the slow pulsing mitosis. They fall out of two numbers, feed
+    and kill, the same way Alan Turing's 1952 model explained a
+    leopard's spots and a zebra's stripes as one chemical process
+    with no plan for either.
+  </p>
 
-  <section class="controls">
+  <p class="howto">
+    Drag the sliders to move through the parameter space live.
+    Click or drag on the chamber to add reagent by hand.
+  </p>
+
+  <section class="panel controls" aria-label="Parameters">
     <div class="param-row">
       <div class="param-head">
         <label for="feed">Feed rate &middot; F</label>
@@ -54,22 +57,18 @@
     </div>
   </section>
 
-  <hr class="divider" />
-
-  <section>
+  <section class="regimes">
     <p class="eyebrow">Named regimes</p>
     <div class="presets" id="presets"></div>
   </section>
 
-  <hr class="divider" />
+  <button id="reseed" type="button">Reseed the chamber</button>
 
-  <section id="stability">
+  <section class="panel stability" id="stability">
     <p class="eyebrow">Linear stability, live</p>
-    <p class="lede small" id="stability-trivial"></p>
-    <p class="lede small" id="stability-nontrivial"></p>
+    <div class="stat" id="stability-trivial"></div>
+    <div class="stat" id="stability-nontrivial"></div>
   </section>
-
-  <button id="reseed">Reseed the chamber</button>
 
   <p class="hint">
     Simulated at 256&times;256 on a wrapped grid, stepped forward on
